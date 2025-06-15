@@ -21,6 +21,19 @@
 local Terminal = {}
 Terminal.__index = Terminal
 
+---@return integer
+local function create_term_buf()
+    -- TODO: Fix bug:
+    --   If you try to create a new terminal object while another non-floating
+    --   terminal window is open (not necessarily focused), this will cause it
+    --   to increase it's size to half of the screen.
+    vim.cmd("botright split")
+    vim.cmd("term")
+    local bufnr = vim.api.nvim_get_current_buf()
+    vim.cmd("close")
+    return bufnr
+end
+
 ---@param opts table?
 function Terminal.new(opts)
     opts = opts or {}
@@ -31,14 +44,7 @@ function Terminal.new(opts)
     self.title = vim.F.if_nil(opts.title, " Terminal ")
     self.floating = vim.F.if_nil(opts.floating, false)
 
-    -- TODO: Fix bug:
-    --   If you try to create a new terminal object while another non-floating
-    --   terminal window is open (not necessarily focused), this will cause it
-    --   to increase it's size to half of the screen.
-    vim.cmd("botright split")
-    vim.cmd("term")
-    self.bufnr = vim.api.nvim_get_current_buf()
-    vim.cmd("close")
+    self.bufnr = create_term_buf()
 
     return self
 end
@@ -76,6 +82,10 @@ function Terminal:is_focused()
 end
 
 function Terminal:_win_open()
+    if not vim.api.nvim_buf_is_valid(self.bufnr) then
+        self.bufnr = create_term_buf()
+    end
+
     if self.floating then
         self.term_win_id = vim.api.nvim_open_win(
             self.bufnr,
