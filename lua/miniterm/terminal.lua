@@ -7,7 +7,6 @@
 ---@field close fun(self: Terminal)
 ---@field focus fun(self: Terminal)
 ---@field toggle fun(self: Terminal)
----@field _win_open fun(self: Terminal)
 ---@field height_percentage number
 ---@field title string
 ---@field floating boolean
@@ -16,10 +15,10 @@
 ---@field last_win_id integer?
 ---@field last_bufnr integer?
 ---@field last_win_pos integer[]?
-
----@type Terminal
 local Terminal = {}
 Terminal.__index = Terminal
+
+local in_windows = vim.fn.has("win64") == 1 or vim.fn.has("win32") == 1
 
 ---@return integer
 local function create_term_buf()
@@ -27,8 +26,9 @@ local function create_term_buf()
     --   If you try to create a new terminal object while another non-floating
     --   terminal window is open (not necessarily focused), this will cause it
     --   to increase it's size to half of the screen.
+    local term = (in_windows and " pwsh.exe") or ""
     vim.cmd("botright split")
-    vim.cmd("term")
+    vim.cmd("term" .. term)
     local bufnr = vim.api.nvim_get_current_buf()
     vim.cmd("close")
     return bufnr
